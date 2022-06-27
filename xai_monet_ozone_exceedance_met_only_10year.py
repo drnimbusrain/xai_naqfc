@@ -19,12 +19,13 @@ from sklearn.metrics import accuracy_score
 
 from functools import reduce
 
+month='August'
 #Read the model input datasets (met and emissions inputs) and outputs (ozone)
-mei_fnames='ozone_exceedance_data/raw_naqfc_24hr/aqm.202108*.t12z.metcro2d.ncf'
+mei_fnames='ozone_exceedance_data/raw_naqfc_24hr_10year/subset/aqm.*08*.t12z.metcro2d.ncf'
 #aei_fnames='ozone_exceedance_data/raw_naqfc/emis_mole_all_202108*_AQF5X_nobeis_2016fh_16j.ncf'
 #bei_fnames='ozone_exceedance_data/raw_naqfc_24hr/aqm.202108*.t12z.b3gt2.ncf'
 #fei_fnames='ozone_exceedance_data/raw_naqfc/aqm.202108*.t12z.fireemis.ncf'
-ozo_fnames='ozone_exceedance_data/raw_naqfc_24hr/aqm.202108*.t12z.aconc_sfc.ncf'
+ozo_fnames='ozone_exceedance_data/raw_naqfc_24hr_10year/subset/aqm.*08*.t12z.aconc.ncf'
 
 #set lat/lon max and lat/lon min to subset the CONUS area of interest
 #region='northeast'
@@ -74,13 +75,13 @@ ozo_fnames='ozone_exceedance_data/raw_naqfc_24hr/aqm.202108*.t12z.aconc_sfc.ncf'
 #latmax =  49.0027
 #latmin =  41.9871
 
-#set specific regions of heavy ozone pollution
+#set specific regions of heavy ozone pollution west-east
 #South Coast Air Basin (SoCAB) that includes urbanized portions of Los Angeles, Orange, Riverside, and San Bernardino Counties
-#region='SoCAB'
-#lonmax = -116.676164
-#lonmin = -118.913288
-#latmax =  34.81774
-#latmin =  33.433425
+region='SoCAB'
+lonmax = -116.676164
+lonmin = -118.913288
+latmax =  34.81774
+latmin =  33.433425
 
 #region='BWCorr'
 #lonmax = -76.6122
@@ -94,19 +95,44 @@ ozo_fnames='ozone_exceedance_data/raw_naqfc_24hr/aqm.202108*.t12z.aconc_sfc.ncf'
 #latmax =  42.0
 #latmin =  40.0
 
-region='LMOS'
-lonmax = -87.40
-lonmin = -88.19
-latmax =  45.25
-latmin =  41.62
+#region='LMOSWest'
+#lonmax = -87.40
+#lonmin = -88.19
+#latmax =  45.25
+#latmin =  41.62
+
+#region='LMOSEast'
+#lonmax = -87.40
+#lonmin = -88.19
+#latmax =  45.25
+#latmin =  41.62
+
+#region='DCMetro'
+#lonmax = -116.676164
+#lonmin = -118.913288
+#latmax =  34.81774
+#latmin =  33.433425
+
+#region='AtlantaMetro'
+#lonmax = -116.676164
+#lonmin = -118.913288
+#latmax =  34.81774
+#latmin =  33.433425
+
+#region='COFrontRange'
+#lonmax = -87.40
+#lonmin = -88.19
+#latmax =  45.25
+#latmin =  41.62
+
 
 
 # open the datasets using xarray and convert to dataframes
 print('opening met inputs...')
+print(mei_fnames)
 met_dset_orig = monetio.models.cmaq.open_mfdataset(mei_fnames)
 met_dset=met_dset_orig
-
-met_df=met_dset[['TEMP2','WSPD10','WDIR10','Q2','PBL','RGRND','CFRAC','RSTOMI', 'RADYNI','LAI','RN','RC']].to_dataframe().reset_index()
+met_df=met_dset[['TEMPG','TEMP2','WSPD10','WDIR10','Q2','PBL','RGRND','CFRAC','RSTOMI', 'RADYNI','RN','RC']].to_dataframe().reset_index()
 met_df['PRECIP']=met_df['RN']+met_df['RC']
 met_df.drop(columns=['x', 'y', 'z','RN','RC'], inplace=True)
 met_df.query('latitude > @latmin & latitude < @latmax & longitude < @lonmax & longitude > @lonmin & RGRND > 0.0',inplace=True)
@@ -149,10 +175,10 @@ met_df.query('latitude > @latmin & latitude < @latmax & longitude < @lonmax & lo
 #print(fei_df)
 
 print('opening ozone outputs and set target ozone value...')
+print(ozo_fnames)
 ozo_dset_orig = monetio.models.cmaq.open_mfdataset(ozo_fnames)
 ozo_dset=ozo_dset_orig
 #ozo_dset=ozo_dset_orig.coarsen(x=6,boundary="trim").mean().coarsen(y=6,boundary="trim").mean()
-
 ozo_df=ozo_dset['O3'].to_dataframe().reset_index()
 ozo_df.query('latitude > @latmin & latitude < @latmax & longitude < @lonmax & longitude > @lonmin',inplace=True)
 
@@ -208,33 +234,33 @@ last_explanation=shap_values[:,0].size - 1
 print('shap visualizations...')
 # Generate summary dot plot
 shap.summary_plot(shap_values, X,title="SHAP summary plot",show=False)
-plt.savefig("Figure_1_shap_value_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_1_shap_value_10year_"+region+"_"+month+".png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 ## Generate summary bar plot
 shap.summary_plot(shap_values, X,plot_type="bar",show=False)
-plt.savefig("Figure_2_mean_shap_value_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_2_mean_shap_value_10year_"+region+"_"+month+".png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 ## Generate specific dependence plots
 shap.dependence_plot("PBL", shap_values, X, interaction_index="TEMP2", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_PBL_TEMP2.png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_PBL_TEMP2.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 shap.dependence_plot("TEMP2", shap_values, X, interaction_index="PBL", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_TEMP2_PBL.png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_TEMP2_PBL.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 shap.dependence_plot("RGRND", shap_values, X, interaction_index="CFRAC", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_RGRND_CFRAC.png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_RGRND_CFRAC.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 shap.dependence_plot("CFRAC", shap_values, X, interaction_index="RGRND", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_CFRAC_RGRND.png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_CFRAC_RGRND.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 shap.dependence_plot("Q2", shap_values, X, interaction_index="PRECIP", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_Q2_PRECIP.png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_Q2_PRECIP.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 #shap.dependence_plot("BE_VOC", shap_values, X, interaction_index="TEMP2", alpha=0.1, show=False)
@@ -270,15 +296,15 @@ plt.close()
 #plt.close()
 
 shap.dependence_plot("WDIR10", shap_values, X, interaction_index="WSPD10", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_WDIR10_WSPD10.png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_WDIR10_WSPD10.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 shap.dependence_plot("WDIR10", shap_values, X, interaction_index="TEMP2", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_WDIR10_TEMP2.png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_WDIR10_TEMP2.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 shap.dependence_plot("WSPD10", shap_values, X, interaction_index="WDIR10", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_WSPD10_WDIR10.png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_WSPD10_WDIR10.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 #shap.dependence_plot("AE_NOX", shap_values, X, interaction_index="AE_VOC", alpha=0.1, show=False)
@@ -301,11 +327,11 @@ plt.close()
 #
 ## Generate waterfall plot
 shap.plots._waterfall.waterfall_legacy(expected_value,shap_values[0], feature_names=X.columns, max_display=20, show=False)
-plt.savefig("Figure_5_waterfall_legacy_first_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_5_waterfall_legacy_first_10year_"+region+"_"+month+".png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 #
 shap.plots._waterfall.waterfall_legacy(expected_value,shap_values[last_explanation], feature_names=X.columns, max_display=20, show=False)
-plt.savefig("Figure_5_waterfall_legacy_last_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_5_waterfall_legacy_last_10year_"+region+"_"+month+".png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 #
 ## Generate force plot - Single row
@@ -324,15 +350,15 @@ plt.close()
 #
 ## Generate Decision plot
 shap.decision_plot(expected_value, shap_values[0],  link='logit', feature_names=(X.columns.tolist()),ignore_warnings=True, show=False)
-plt.savefig("Figure_7_decision_plot_first_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_7_decision_plot_first_10year_"+region+"_"+month+".png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 #
 shap.decision_plot(expected_value, shap_values[last_explanation], link='logit', feature_names=(X.columns.tolist()),ignore_warnings=True, show=False)
-plt.savefig("Figure_7_decision_plot_last_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_7_decision_plot_last_10year_"+region+"_"+month+".png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 #
 shap.decision_plot(expected_value, shap_values[:100,:],  link='logit', feature_names=(X.columns.tolist()),ignore_warnings=True, show=False)
-plt.savefig("Figure_7_decision_plot_multiple_100_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
+plt.savefig("Figure_7_decision_plot_multiple_100_10year_"+region+"_"+month+".png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 #shap.plots.heatmap(shap_values[1:100])

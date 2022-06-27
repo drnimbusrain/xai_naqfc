@@ -76,11 +76,11 @@ ozo_fnames='ozone_exceedance_data/raw_naqfc_24hr/aqm.202108*.t12z.aconc_sfc.ncf'
 
 #set specific regions of heavy ozone pollution
 #South Coast Air Basin (SoCAB) that includes urbanized portions of Los Angeles, Orange, Riverside, and San Bernardino Counties
-region='SoCAB'
-lonmax = -116.676164
-lonmin = -118.913288
-latmax =  34.81774
-latmin =  33.433425
+#region='SoCAB'
+#lonmax = -116.676164
+#lonmin = -118.913288
+#latmax =  34.81774
+#latmin =  33.433425
 
 #region='BWCorr'
 #lonmax = -76.6122
@@ -94,16 +94,23 @@ latmin =  33.433425
 #latmax =  42.0
 #latmin =  40.0
 
+region='LMOS'
+lonmax = -87.40
+lonmin = -88.19
+latmax =  45.25
+latmin =  41.62
+
+
 # open the datasets using xarray and convert to dataframes
 print('opening met inputs...')
 met_dset_orig = monetio.models.cmaq.open_mfdataset(mei_fnames)
 met_dset=met_dset_orig
 #met_dset=met_dset_orig.coarsen(x=6,boundary="trim").mean().coarsen(y=6,boundary="trim").mean()
 
-met_df=met_dset[['TEMP2','WSPD10','WDIR10','Q2','PBL','GSW','CFRAC','LAI','RN','RC']].to_dataframe().reset_index()
+met_df=met_dset[['TEMP2','WSPD10','WDIR10','Q2','PBL','RGRND','CFRAC', 'RSTOMI', 'RADYNI', 'LAI','RN','RC']].to_dataframe().reset_index()
 met_df['PRECIP']=met_df['RN']+met_df['RC']
 met_df.drop(columns=['x', 'y', 'z','RN','RC'], inplace=True)
-met_df.query('latitude > @latmin & latitude < @latmax & longitude < @lonmax & longitude > @lonmin & GSW > 0.0',inplace=True)
+met_df.query('latitude > @latmin & latitude < @latmax & longitude < @lonmax & longitude > @lonmin & RGRND > 0.0',inplace=True)
 
 print('opening ant. emission inputs...')
 aei_dset_orig = monetio.models.cmaq.open_mfdataset(aei_fnames)
@@ -218,12 +225,12 @@ shap.dependence_plot("TEMP2", shap_values, X, interaction_index="PBL", alpha=0.1
 plt.savefig("Figure_3_dependence_plot_"+region+"_TEMP2_PBL.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
-shap.dependence_plot("GSW", shap_values, X, interaction_index="CFRAC", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_GSW_CFRAC.png", format='png', dpi='figure', bbox_inches='tight')
+shap.dependence_plot("RGRND", shap_values, X, interaction_index="CFRAC", alpha=0.1, show=False)
+plt.savefig("Figure_3_dependence_plot_"+region+"_RGRND_CFRAC.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
-shap.dependence_plot("CFRAC", shap_values, X, interaction_index="GSW", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_CFRAC_GSW.png", format='png', dpi='figure', bbox_inches='tight')
+shap.dependence_plot("CFRAC", shap_values, X, interaction_index="RGRND", alpha=0.1, show=False)
+plt.savefig("Figure_3_dependence_plot_"+region+"_CFRAC_RGRND.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 shap.dependence_plot("Q2", shap_values, X, interaction_index="PRECIP", alpha=0.1, show=False)
@@ -238,8 +245,8 @@ shap.dependence_plot("TEMP2", shap_values, X, interaction_index="BE_VOC", alpha=
 plt.savefig("Figure_3_dependence_plot_"+region+"_TEMP2_BE_VOC.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
-shap.dependence_plot("BE_VOC", shap_values, X, interaction_index="GSW", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_BE_VOC_GSW.png", format='png', dpi='figure', bbox_inches='tight')
+shap.dependence_plot("BE_VOC", shap_values, X, interaction_index="RGRND", alpha=0.1, show=False)
+plt.savefig("Figure_3_dependence_plot_"+region+"_BE_VOC_RGRND.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 shap.dependence_plot("BE_VOC", shap_values, X, interaction_index="LAI", alpha=0.1, show=False)
@@ -250,8 +257,8 @@ shap.dependence_plot("LAI", shap_values, X, interaction_index="BE_VOC", alpha=0.
 plt.savefig("Figure_3_dependence_plot_"+region+"_LAI_BE_VOC.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
-shap.dependence_plot("GSW", shap_values, X, interaction_index="BE_VOC", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_"+region+"_GSW_BE_VOC.png", format='png', dpi='figure', bbox_inches='tight')
+shap.dependence_plot("RGRND", shap_values, X, interaction_index="BE_VOC", alpha=0.1, show=False)
+plt.savefig("Figure_3_dependence_plot_"+region+"_RGRND_BE_VOC.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
 shap.dependence_plot("BE_NO", shap_values, X, interaction_index="PRECIP", alpha=0.1, show=False)
@@ -300,6 +307,7 @@ plt.close()
 shap.plots._waterfall.waterfall_legacy(expected_value,shap_values[last_explanation], feature_names=X.columns, max_display=20, show=False)
 plt.savefig("Figure_5_waterfall_legacy_last_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
+
 #
 ## Generate force plot - Single row
 #shap.force_plot(explainer.expected_value, shap_values[0], feature_names=X.columns, show=False)
@@ -331,3 +339,11 @@ plt.close()
 #shap.plots.heatmap(shap_values[1:100])
 #plt.savefig("Figure_8_heat_map_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
 #plt.close()
+
+shap.plots.waterfall(shap_values[0], feature_names=X.columns, max_display=20, show=False)
+plt.savefig("Figure_9_waterfall_first_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
+plt.close()
+#
+shap.plots.waterfall(shap_values[last_explanation], feature_names=X.columns, max_display=20, show=False)
+plt.savefig("Figure_9_waterfall_last_"+region+".png", format='png', dpi='figure', bbox_inches='tight')
+plt.close()
