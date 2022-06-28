@@ -21,7 +21,9 @@ from functools import reduce
 
 #month='May'
 #month='June'
-month='July'
+#month='July'
+#month='August'
+month='September'
 
 #Read the model input datasets (met and emissions inputs) and outputs (ozone)
 mei_fnames='../ozone_exceedance_data/raw_naqfc_24hr_10year/subset/'+month+'/aqm.*.t12z.metcro2d.ncf'
@@ -81,22 +83,22 @@ ozo_fnames='../ozone_exceedance_data/raw_naqfc_24hr_10year/subset/'+month+'/aqm.
 #set specific regions of heavy ozone pollution west-east
 #South Coast Air Basin (SoCAB) that includes urbanized portions of Los Angeles, Orange, Riverside, and San Bernardino Counties
 region='SoCAB'
-lonmax = -116.676164
-lonmin = -118.913288
-latmax =  34.81774
-latmin =  33.433425
+#lonmax = -116.676164
+#lonmin = -118.913288
+#latmax =  34.81774
+#latmin =  33.433425
+
+region='NYLIS'
+lonmax = -72.0
+lonmin = -75.0
+latmax =  42.0
+latmin =  40.0
 
 #region='BWCorr'
 #lonmax = -76.6122
 #lonmin = -77.0369
 #latmax =  39.2904
 #latmin =  38.9072
-
-#region='NYLIS'
-#lonmax = -72.0
-#lonmin = -75.0
-#latmax =  42.0
-#latmin =  40.0
 
 #region='LMOSWest'
 #lonmax = -87.40
@@ -263,9 +265,18 @@ shap.dependence_plot("CFRAC", shap_values, X, interaction_index="RGRND", alpha=0
 plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_CFRAC_RGRND.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
-#shap.dependence_plot("Q2", shap_values, X, interaction_index="PRECIP", alpha=0.1, show=False)
-#plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_Q2_PRECIP.png", format='png', dpi='figure', bbox_inches='tight')
-#plt.close()
+shap.dependence_plot("PRSFC", shap_values, X, interaction_index="WSPD10", alpha=0.1, show=False)
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_PRSFC_WSPD10.png", format='png', dpi='figure', bbox_inches='tight')
+plt.close()
+
+shap.dependence_plot("WSPD10", shap_values, X, interaction_index="PRSFC", alpha=0.1, show=False)
+plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_WSPD10_PRSFC.png", format='png', dpi='figure', bbox_inches='tight')
+plt.close()
+
+if month == 'July' or month == 'August' or month == 'September':
+ shap.dependence_plot("Q2", shap_values, X, interaction_index=None, alpha=0.1, show=False)
+ plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_Q2.png", format='png', dpi='figure', bbox_inches='tight')
+ plt.close()
 
 #shap.dependence_plot("BE_VOC", shap_values, X, interaction_index="TEMP2", alpha=0.1, show=False)
 #plt.savefig("Figure_3_dependence_plot_"+region+"_BE_VOC_TEMP2.png", format='png', dpi='figure', bbox_inches='tight')
