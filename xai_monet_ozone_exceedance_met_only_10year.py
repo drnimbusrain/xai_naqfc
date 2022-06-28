@@ -19,13 +19,16 @@ from sklearn.metrics import accuracy_score
 
 from functools import reduce
 
-month='August'
+#month='May'
+#month='June'
+month='July'
+
 #Read the model input datasets (met and emissions inputs) and outputs (ozone)
-mei_fnames='ozone_exceedance_data/raw_naqfc_24hr_10year/subset/aqm.*08*.t12z.metcro2d.ncf'
+mei_fnames='../ozone_exceedance_data/raw_naqfc_24hr_10year/subset/'+month+'/aqm.*.t12z.metcro2d.ncf'
 #aei_fnames='ozone_exceedance_data/raw_naqfc/emis_mole_all_202108*_AQF5X_nobeis_2016fh_16j.ncf'
 #bei_fnames='ozone_exceedance_data/raw_naqfc_24hr/aqm.202108*.t12z.b3gt2.ncf'
 #fei_fnames='ozone_exceedance_data/raw_naqfc/aqm.202108*.t12z.fireemis.ncf'
-ozo_fnames='ozone_exceedance_data/raw_naqfc_24hr_10year/subset/aqm.*08*.t12z.aconc.ncf'
+ozo_fnames='../ozone_exceedance_data/raw_naqfc_24hr_10year/subset/'+month+'/aqm.*.t12z.aconc.ncf'
 
 #set lat/lon max and lat/lon min to subset the CONUS area of interest
 #region='northeast'
@@ -129,10 +132,12 @@ latmin =  33.433425
 
 # open the datasets using xarray and convert to dataframes
 print('opening met inputs...')
-print(mei_fnames)
 met_dset_orig = monetio.models.cmaq.open_mfdataset(mei_fnames)
 met_dset=met_dset_orig
-met_df=met_dset[['TEMPG','TEMP2','WSPD10','WDIR10','Q2','PBL','RGRND','CFRAC','RSTOMI', 'RADYNI','RN','RC']].to_dataframe().reset_index()
+if month == 'May' or month == 'June':
+ met_df=met_dset[['TEMPG','TEMP2','WSPD10','WDIR10','PRSFC', 'PBL', 'QFX','HFX','RGRND','CFRAC','RSTOMI','RADYNI','RN','RC']].to_dataframe().reset_index()
+else:
+ met_df=met_dset[['TEMPG','TEMP2','WSPD10','WDIR10','PRSFC','Q2','PBL', 'QFX','HFX','RGRND','CFRAC','VEG','RSTOMI','RADYNI','RN','RC','SOIT1','SOIM1']].to_dataframe().reset_index()
 met_df['PRECIP']=met_df['RN']+met_df['RC']
 met_df.drop(columns=['x', 'y', 'z','RN','RC'], inplace=True)
 met_df.query('latitude > @latmin & latitude < @latmax & longitude < @lonmax & longitude > @lonmin & RGRND > 0.0',inplace=True)
@@ -175,7 +180,6 @@ met_df.query('latitude > @latmin & latitude < @latmax & longitude < @lonmax & lo
 #print(fei_df)
 
 print('opening ozone outputs and set target ozone value...')
-print(ozo_fnames)
 ozo_dset_orig = monetio.models.cmaq.open_mfdataset(ozo_fnames)
 ozo_dset=ozo_dset_orig
 #ozo_dset=ozo_dset_orig.coarsen(x=6,boundary="trim").mean().coarsen(y=6,boundary="trim").mean()
@@ -259,9 +263,9 @@ shap.dependence_plot("CFRAC", shap_values, X, interaction_index="RGRND", alpha=0
 plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_CFRAC_RGRND.png", format='png', dpi='figure', bbox_inches='tight')
 plt.close()
 
-shap.dependence_plot("Q2", shap_values, X, interaction_index="PRECIP", alpha=0.1, show=False)
-plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_Q2_PRECIP.png", format='png', dpi='figure', bbox_inches='tight')
-plt.close()
+#shap.dependence_plot("Q2", shap_values, X, interaction_index="PRECIP", alpha=0.1, show=False)
+#plt.savefig("Figure_3_dependence_plot_10year_"+region+"_"+month+"_Q2_PRECIP.png", format='png', dpi='figure', bbox_inches='tight')
+#plt.close()
 
 #shap.dependence_plot("BE_VOC", shap_values, X, interaction_index="TEMP2", alpha=0.1, show=False)
 #plt.savefig("Figure_3_dependence_plot_"+region+"_BE_VOC_TEMP2.png", format='png', dpi='figure', bbox_inches='tight')
